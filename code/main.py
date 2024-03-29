@@ -3,7 +3,7 @@ import yaml
 import os
 
 
-class Main():
+class Main:
     def __init__(self):
         self.keysToIgnore = [
             "display.type",
@@ -22,9 +22,10 @@ class Main():
             "options": "Opcje",
             "Quest has been started.": "Zadanie zostało rozpoczęte.",
             "Upon completion of this quest, you will be rewarded with": "Po ukończeniu tego zadania zostaniesz nagrodzony w postaci",
+            "was added to your in-game balance": "zostało dodane do twojego salda",
         }
 
-        auth_key = "81b97cd7-cd11-4e3f-b939-34b7bb964a1d:fx"
+        auth_key = "ae5195ab-7d63-4c3c-9af1-169c7b6241d2:fx"
         self.translator = Translator(auth_key)
         self.language_key = "en"
         self.deepl_target = "pl"
@@ -46,30 +47,29 @@ class Main():
         for name, file in self.filesDict.items():
             self.goThroughDict(file, "")
 
-    def goThroughDict(self, dictFile, keyI=""):
+    def goThroughDict(self, dictFile, keyI):
         for key, value in dictFile.items():
-            print(keyI, "   ", key)
             if keyI == "":
                 if key in self.keysToIgnore:
                     continue
-
-            if key.startswith(keyI):
+            for ignoreKey in self.keysToIgnore:
+                if ignoreKey == keyI + key:
+                    print("ignornig", ignoreKey, "   ", keyI, " ", key,)
+                    break
+            else:
+                print(keyI, "   ", key)
                 if isinstance(value, str):
                     dictFile[key] = self.translating(value)
                 else:
                     if isinstance(value, list):
                         self.goThroughList(value)
                     if isinstance(value, dict):
-                        self.goThroughDict(value)
+                        self.goThroughDict(value, keyI + key + ".")
 
     def goThroughList(self, list):
         for item in list:
             if isinstance(item, str):
                 list[list.index(item)] = self.translating(item)
-            elif isinstance(item, dict):
-                self.goThroughDict(item)
-            elif isinstance(item, list):
-                self.goThroughList(item)
 
     def translating(self, value):
         if value == "":
