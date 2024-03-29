@@ -13,7 +13,18 @@ class Main():
             "placeholders.progress",
             "placeholders.max"
         ]
-        auth_key = "266f89c3-9fb8-4921-9132-78266795f0e5:fx"
+        self.predefinedTranslations = {
+            "You need to do a certain activity": "Musisz wykonać określoną czynność",
+            "before receiving the reward": "przed otrzymaniem nagrody",
+            "Options": "Opcje",
+            "Rewards": "Nagrody",
+            "You will receive": "Otrzymasz",
+            "options": "Opcje",
+            "Quest has been started.": "Zadanie zostało rozpoczęte.",
+            "Upon completion of this quest, you will be rewarded with": "Po ukończeniu tego zadania zostaniesz nagrodzony w postaci",
+        }
+
+        auth_key = "81b97cd7-cd11-4e3f-b939-34b7bb964a1d:fx"
         self.translator = Translator(auth_key)
         self.language_key = "en"
         self.deepl_target = "pl"
@@ -44,21 +55,7 @@ class Main():
 
             if key.startswith(keyI):
                 if isinstance(value, str):
-                    print(value)
-                    if value == "":
-                        continue
-                    elif value.isdigit():
-                        dictFile[key] = int(value)
-                        continue
-                    elif value == "true":
-                        dictFile[key] = True
-                        continue
-                    elif value == "false":
-                        dictFile[key] = False
-                        continue
-                    else:
-                        dictFile[key] = self.translator.translate_text(value, source_lang=self.language_key,
-                                                                       target_lang=self.deepl_target).text
+                    dictFile[key] = self.translating(value)
                 else:
                     if isinstance(value, list):
                         self.goThroughList(value)
@@ -68,24 +65,50 @@ class Main():
     def goThroughList(self, list):
         for item in list:
             if isinstance(item, str):
-                if item == "":
-                    continue
-                elif item.isdigit():
-                    list[list.index(item)] = int(item)
-                    continue
-                elif item == "true":
-                    list[list.index(item)] = True
-                    continue
-                elif item == "false":
-                    list[list.index(item)] = False
-                    continue
-                else:
-                    list[list.index(item)] = self.translator.translate_text(item, source_lang=self.language_key,
-                                                                            target_lang=self.deepl_target).text
+                list[list.index(item)] = self.translating(item)
             elif isinstance(item, dict):
                 self.goThroughDict(item)
             elif isinstance(item, list):
                 self.goThroughList(item)
+
+    def translating(self, value):
+        if value == "":
+            return ""
+        elif value.isdigit():
+            return int(value)
+        elif value == "true":
+            return True
+        elif value == "false":
+            return False
+        else:
+            value = value.replace("Progress", "Postęp")
+            for text in self.predefinedTranslations:
+                if text in value:
+                    return value.replace(text, self.predefinedTranslations[text])
+
+            placeholder = ""
+            isPlaceholder = False
+            placeholderIndex = int
+            for text in value:
+                if text == "{":
+                    placeholderIndex = value.index(text)
+                    isPlaceholder = True
+                if isPlaceholder:
+                    placeholder += text
+                if text == "}":
+                    break
+            if isPlaceholder:
+                value = value.replace(placeholder, "")
+
+            if value != "":
+                outPutValue = self.translator.translate_text(value, source_lang=self.language_key,
+                                                             target_lang=self.deepl_target).text
+            if value == "":
+                outPutValue = value
+            if isPlaceholder:
+                outPutValue = outPutValue[:placeholderIndex] + placeholder + outPutValue[placeholderIndex:]
+
+            return outPutValue
 
     def saveFiles(self):
         for name, file in self.filesDict.items():
